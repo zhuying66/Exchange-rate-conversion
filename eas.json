@@ -8,14 +8,12 @@
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
-      },
-      "channel": "preview"
+      }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
-      },
-      "channel": "production"
+      }
     }
   },
   "submit": {
