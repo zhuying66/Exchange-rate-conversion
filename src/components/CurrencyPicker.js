@@ -1,0 +1,106 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  StyleSheet,
+} from 'react-native';
+
+export default function CurrencyPicker({
+  visible,
+  currencies,
+  selected,
+  onSelect,
+  onClose,
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <Text style={styles.title}>选择货币</Text>
+          <FlatList
+            data={currencies}
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.item,
+                  selected === item.code && styles.itemSelected,
+                ]}
+                onPress={() => onSelect(item.code)}
+              >
+                <Text
+                  style={[
+                    styles.itemText,
+                    selected === item.code && styles.itemTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>关闭</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    paddingBottom: 30,
+  },
+  title: {
+    color: '#e0e0e0',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a4a',
+  },
+  item: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#2a2a4a',
+  },
+  itemSelected: {
+    backgroundColor: '#16213e',
+  },
+  itemText: {
+    color: '#a0a0b8',
+    fontSize: 16,
+  },
+  itemTextSelected: {
+    color: '#00d2ff',
+    fontWeight: '600',
+  },
+  closeBtn: {
+    marginTop: 12,
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#e94560',
+    borderRadius: 10,
+  },
+  closeBtnText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

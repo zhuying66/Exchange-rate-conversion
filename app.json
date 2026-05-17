@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "实时汇率转换",
+    "slug": "currency-converter",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.zhuying.currencyconverter",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "allowBackup": true,
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}
