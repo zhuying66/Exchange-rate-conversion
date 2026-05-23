@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "实时汇率转换",
+    "name": "Currency Converter",
     "slug": "currency-converter",
     "version": "1.0.0",
     "orientation": "portrait",

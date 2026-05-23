@@ -1,24 +1,24 @@
-# 实时汇率转换 (Currency Converter)
+# Currency Converter
 
-基于 React Native (Expo SDK 52) 的 Android 实时汇率转换应用。数据来源为[欧洲央行 (ECB)](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml) 每日汇率，无需注册 API Key。
+A real-time currency conversion Android app built with React Native (Expo SDK 52). Exchange rate data sourced from the [European Central Bank (ECB)](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml) daily feed — no API key required.
 
-## 功能
+## Features
 
-- 18 种常用货币实时汇率转换
-- 30 秒自动刷新汇率
-- 下拉手动刷新
-- 支持断网离线汇率
-- 白色简洁 UI 界面
-- 仅 Android (arm64-v8a)
+- Real-time conversion across 18 currencies
+- Auto-refresh every 30 seconds
+- Pull-to-refresh for manual updates
+- Offline fallback rates when network is unavailable
+- Clean light-themed UI with currency flags
+- Android only (arm64-v8a)
 
-## 技术栈
+## Tech Stack
 
 - React Native 0.76.6 (Expo Bare Workflow)
-- Hermes JS 引擎
-- New Architecture (Fabric/Bridgeless)
-- 欧洲央行 XML 汇率数据 (免费、无需注册)
+- Hermes JS Engine
+- New Architecture (Fabric / Bridgeless)
+- ECB XML daily exchange rates (free, no registration)
 
-## 构建
+## Build
 
 ```bash
 npm install
@@ -26,23 +26,23 @@ cd android
 ./gradlew assembleRelease
 ```
 
-APK 输出路径: `android/app/build/outputs/apk/release/app-release.apk`
+APK output: `android/app/build/outputs/apk/release/app-release.apk`
 
-## 项目结构
+## Project Structure
 
 ```
-├── App.js              # 入口文件
+├── App.js              # Entry point
 ├── src/
 │   ├── screens/
-│   │   └── ConverterScreen.js   # 主界面
+│   │   └── ConverterScreen.js   # Main screen
 │   ├── components/
-│   │   └── CurrencyPicker.js    # 货币选择器
+│   │   └── CurrencyPicker.js    # Currency picker modal
 │   └── services/
-│       └── api.js               # 汇率数据服务
-├── android/            # Android 原生工程
-└── app.json            # Expo 配置
+│       └── api.js               # Exchange rate service
+├── android/            # Android native project
+└── app.json            # Expo configuration
 ```
 
-## 许可证
+## License
 
 MIT License

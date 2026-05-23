@@ -46,7 +46,7 @@ export default function ConverterScreen() {
       setRates(data.rates || {});
       setRefreshedAt(new Date());
     } catch {
-      setError('网络错误，请检查网络后下拉刷新');
+      setError('Network error. Pull down to retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -65,7 +65,7 @@ export default function ConverterScreen() {
         setResult(data.rates[toCurrency]);
       }
     } catch {
-      setError('转换失败，请重试');
+      setError('Conversion failed. Please retry.');
     }
   }, [amount, fromCurrency, toCurrency]);
 
@@ -113,20 +113,20 @@ export default function ConverterScreen() {
         />
       }
     >
-      <Text style={styles.title}>实时汇率转换</Text>
+      <Text style={styles.title}>Currency Converter</Text>
 
-      <Text style={styles.label}>金额</Text>
+      <Text style={styles.label}>Amount</Text>
       <TextInput
         style={styles.input}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
-        placeholder="输入金额"
+        placeholder="Enter amount"
         placeholderTextColor="#999"
         selectTextOnFocus
       />
 
-      <Text style={styles.label}>从</Text>
+      <Text style={styles.label}>From</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('from')}
@@ -139,10 +139,10 @@ export default function ConverterScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.swapBtn} onPress={swapCurrencies}>
-        <Text style={styles.swapBtnText}>↑↓ 交换货币</Text>
+        <Text style={styles.swapBtnText}>Swap Currencies</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>到</Text>
+      <Text style={styles.label}>To</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('to')}
@@ -166,7 +166,7 @@ export default function ConverterScreen() {
 
       {result !== null && !loading && (
         <View style={styles.resultBox}>
-          <Text style={styles.resultLabel}>转换结果</Text>
+          <Text style={styles.resultLabel}>Result</Text>
           <Text style={styles.resultAmount}>
             {parseFloat(amount).toLocaleString()} {fromCurrency}
           </Text>
@@ -181,7 +181,7 @@ export default function ConverterScreen() {
           )}
           {refreshedAt && (
             <Text style={styles.updateInfo}>
-              上次刷新: {formatTime(refreshedAt)}
+              Last updated: {formatTime(refreshedAt)}
             </Text>
           )}
         </View>

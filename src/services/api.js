@@ -1,4 +1,4 @@
-// 离线汇率数据（断网时使用）— 1 CNY = RATES[currency]
+// Offline exchange rates (fallback) — 1 CNY = RATES[currency]
 const OFFLINE_RATES = {
   CNY: 1,
   USD: 0.138,
@@ -20,23 +20,23 @@ const OFFLINE_RATES = {
   MXN: 2.35,
 };
 
-// 欧洲央行每日汇率 XML（免费、无需注册、无需 API Key）
-// 提供 40+ 种货币的 EUR 基准汇率
+// European Central Bank daily exchange rate XML (free, no API key required)
+// Provides EUR-based rates for 40+ currencies
 const ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 
 let cachedRates = null;
 let cacheDate = null;
 
-// 从 ECB XML 抓取实时汇率，失败则回退到离线数据
+// Fetch rates from ECB XML, fall back to offline data on failure
 async function getRates() {
   try {
     const response = await fetch(ECB_URL, {
       headers: { 'Accept': 'application/xml' },
     });
-    if (!response.ok) throw new Error('ECB 请求失败');
+    if (!response.ok) throw new Error('ECB request failed');
     const xml = await response.text();
 
-    // 解析 XML：提取所有 <Cube currency="XXX" rate="X.XXX"/>
+    // Parse XML: extract all <Cube currency="XXX" rate="X.XXX"/>
     const rateMap = {};
     const currencyRe = /currency="(\w+)"/g;
     const rateRe = /rate="([\d.]+)"/g;
@@ -51,19 +51,17 @@ async function getRates() {
       rateMap[currencies[i]] = rates[i];
     }
 
-    // 提取日期
     const dateMatch = xml.match(/time="([\d-]+)"/);
     const date = dateMatch ? dateMatch[1] : new Date().toISOString().slice(0, 10);
 
     if (!rateMap.EUR || !rateMap.CNY) {
-      throw new Error('ECB 数据缺少 EUR 或 CNY');
+      throw new Error('ECB data missing EUR or CNY');
     }
 
-    // ECB 数据以 EUR 为基准，转换为 CNY 基准
-    // eurRate = rateMap[currency] = N 表示 1 EUR = N currency
-    // 所以 1 EUR = rateMap.CNY CNY → 1 CNY = rateMap.EUR / rateMap.CNY EUR
-    // 1 CNY = (1 / rateMap.CNY) EUR → 1 CNY = rateMap[currency] / rateMap.CNY units
-    const cnyRate = rateMap.CNY; // 1 EUR = cnyRate CNY
+    // ECB data uses EUR as base, convert to CNY base
+    // rateMap[currency] = N means 1 EUR = N currency
+    // 1 EUR = rateMap.CNY CNY → 1 CNY = rateMap[currency] / rateMap.CNY units
+    const cnyRate = rateMap.CNY;
     const cnyBased = {};
     for (const [code, eurVal] of Object.entries(rateMap)) {
       cnyBased[code] = eurVal / cnyRate;
@@ -73,7 +71,7 @@ async function getRates() {
     cacheDate = date;
     return { rates: cnyBased, date };
   } catch {
-    // 网络失败 → 使用缓存或离线数据
+    // Network failure → use cache or offline data
     if (cachedRates) {
       return { rates: cachedRates, date: cacheDate };
     }
@@ -94,14 +92,14 @@ function ensureRates() {
   return ratesPromise;
 }
 
-// 以指定货币为基准，返回所有货币的汇率
+// Return all currency rates rebased to the specified base currency
 export async function fetchLatestRates(baseCurrency = 'CNY') {
   const { rates: allRates, date } = await ensureRates();
-  // 每次请求都尝试刷新（后台更新缓存），但不阻塞返回
+  // Trigger background refresh without blocking the current response
   ratesPromise = getRates();
 
   const baseRate = allRates[baseCurrency];
-  if (!baseRate) throw new Error('不支持的货币: ' + baseCurrency);
+  if (!baseRate) throw new Error('Unsupported currency: ' + baseCurrency);
 
   const rebased = {};
   for (const [code, rate] of Object.entries(allRates)) {
@@ -110,28 +108,28 @@ export async function fetchLatestRates(baseCurrency = 'CNY') {
   return { rates: rebased, date };
 }
 
-// 本地计算货币转换（优先用实时汇率）
+// Convert an amount between two currencies
 export async function convertCurrency(amount, from, to) {
   const { rates: allRates } = await ensureRates();
-  // 后台刷新
+  // Background refresh
   ratesPromise = getRates();
 
   const fromRate = allRates[from];
   const toRate = allRates[to];
-  if (!fromRate) throw new Error('不支持的货币: ' + from);
-  if (!toRate) throw new Error('不支持的货币: ' + to);
+  if (!fromRate) throw new Error('Unsupported currency: ' + from);
+  if (!toRate) throw new Error('Unsupported currency: ' + to);
 
   const converted = (parseFloat(amount) / fromRate) * toRate;
   return { rates: { [to]: converted } };
 }
 
-// 强制刷新汇率（下拉刷新时调用）
+// Force refresh rates (called on pull-to-refresh)
 export async function refreshRates() {
   ratesPromise = null;
   return ensureRates();
 }
 
-// 自动定时刷新
+// Auto-refresh timer
 let autoRefreshTimer = null;
 
 export function startAutoRefresh(intervalMs, onRefresh) {
@@ -151,24 +149,23 @@ export function stopAutoRefresh() {
   }
 }
 
-// 常用的货币列表（中文标签 + 国旗）
 export const POPULAR_CURRENCIES = [
-  { code: 'CNY', label: '人民币 (CNY)', flag: '🇨🇳' },
-  { code: 'USD', label: '美元 (USD)', flag: '🇺🇸' },
-  { code: 'EUR', label: '欧元 (EUR)', flag: '🇪🇺' },
-  { code: 'JPY', label: '日元 (JPY)', flag: '🇯🇵' },
-  { code: 'GBP', label: '英镑 (GBP)', flag: '🇬🇧' },
-  { code: 'HKD', label: '港币 (HKD)', flag: '🇭🇰' },
-  { code: 'KRW', label: '韩元 (KRW)', flag: '🇰🇷' },
-  { code: 'AUD', label: '澳元 (AUD)', flag: '🇦🇺' },
-  { code: 'CAD', label: '加元 (CAD)', flag: '🇨🇦' },
-  { code: 'CHF', label: '瑞士法郎 (CHF)', flag: '🇨🇭' },
-  { code: 'SGD', label: '新加坡元 (SGD)', flag: '🇸🇬' },
-  { code: 'THB', label: '泰铢 (THB)', flag: '🇹🇭' },
-  { code: 'TWD', label: '新台币 (TWD)', flag: '🇹🇼' },
-  { code: 'MYR', label: '马来西亚林吉特 (MYR)', flag: '🇲🇾' },
-  { code: 'INR', label: '印度卢比 (INR)', flag: '🇮🇳' },
-  { code: 'RUB', label: '卢布 (RUB)', flag: '🇷🇺' },
-  { code: 'BRL', label: '巴西雷亚尔 (BRL)', flag: '🇧🇷' },
-  { code: 'MXN', label: '墨西哥比索 (MXN)', flag: '🇲🇽' },
+  { code: 'CNY', label: 'Chinese Yuan (CNY)', flag: '🇨🇳' },
+  { code: 'USD', label: 'US Dollar (USD)', flag: '🇺🇸' },
+  { code: 'EUR', label: 'Euro (EUR)', flag: '🇪🇺' },
+  { code: 'JPY', label: 'Japanese Yen (JPY)', flag: '🇯🇵' },
+  { code: 'GBP', label: 'British Pound (GBP)', flag: '🇬🇧' },
+  { code: 'HKD', label: 'Hong Kong Dollar (HKD)', flag: '🇭🇰' },
+  { code: 'KRW', label: 'South Korean Won (KRW)', flag: '🇰🇷' },
+  { code: 'AUD', label: 'Australian Dollar (AUD)', flag: '🇦🇺' },
+  { code: 'CAD', label: 'Canadian Dollar (CAD)', flag: '🇨🇦' },
+  { code: 'CHF', label: 'Swiss Franc (CHF)', flag: '🇨🇭' },
+  { code: 'SGD', label: 'Singapore Dollar (SGD)', flag: '🇸🇬' },
+  { code: 'THB', label: 'Thai Baht (THB)', flag: '🇹🇭' },
+  { code: 'TWD', label: 'New Taiwan Dollar (TWD)', flag: '🇹🇼' },
+  { code: 'MYR', label: 'Malaysian Ringgit (MYR)', flag: '🇲🇾' },
+  { code: 'INR', label: 'Indian Rupee (INR)', flag: '🇮🇳' },
+  { code: 'RUB', label: 'Russian Ruble (RUB)', flag: '🇷🇺' },
+  { code: 'BRL', label: 'Brazilian Real (BRL)', flag: '🇧🇷' },
+  { code: 'MXN', label: 'Mexican Peso (MXN)', flag: '🇲🇽' },
 ];

@@ -19,7 +19,7 @@ export default function CurrencyPicker({
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>选择货币</Text>
+          <Text style={styles.title}>Select Currency</Text>
           <FlatList
             data={currencies}
             keyExtractor={(item) => item.code}
@@ -43,7 +43,7 @@ export default function CurrencyPicker({
             )}
           />
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>关闭</Text>
+            <Text style={styles.closeBtnText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
