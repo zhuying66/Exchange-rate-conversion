@@ -12,11 +12,13 @@ import {
 import {
   fetchLatestRates,
   convertCurrency,
-  POPULAR_CURRENCIES,
+  CURRENCIES,
   refreshRates,
   startAutoRefresh,
   stopAutoRefresh,
 } from '../services/api';
+import translations from '../i18n/translations';
+import { useLanguage } from '../i18n/LanguageContext';
 import CurrencyPicker from '../components/CurrencyPicker';
 
 function formatTime(date) {
@@ -27,6 +29,9 @@ function formatTime(date) {
 }
 
 export default function ConverterScreen() {
+  const { lang, toggleLang } = useLanguage();
+  const t = translations[lang];
+
   const [amount, setAmount] = useState('1');
   const [fromCurrency, setFromCurrency] = useState('CNY');
   const [toCurrency, setToCurrency] = useState('USD');
@@ -38,6 +43,8 @@ export default function ConverterScreen() {
   const [pickerTarget, setPickerTarget] = useState(null);
   const [refreshedAt, setRefreshedAt] = useState(null);
 
+  const currencyLabel = (code) => t.currencies[code] || code;
+
   const loadRates = useCallback(async (showFullLoading = false) => {
     try {
       if (showFullLoading) setLoading(true);
@@ -46,12 +53,12 @@ export default function ConverterScreen() {
       setRates(data.rates || {});
       setRefreshedAt(new Date());
     } catch {
-      setError('Network error. Pull down to retry.');
+      setError(t.networkError);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [fromCurrency]);
+  }, [fromCurrency, t.networkError]);
 
   const doConvert = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -65,9 +72,9 @@ export default function ConverterScreen() {
         setResult(data.rates[toCurrency]);
       }
     } catch {
-      setError('Conversion failed. Please retry.');
+      setError(t.conversionFailed);
     }
-  }, [amount, fromCurrency, toCurrency]);
+  }, [amount, fromCurrency, toCurrency, t.conversionFailed]);
 
   useEffect(() => {
     loadRates(true);
@@ -113,44 +120,49 @@ export default function ConverterScreen() {
         />
       }
     >
-      <Text style={styles.title}>Currency Converter</Text>
+      {/* Language toggle */}
+      <TouchableOpacity style={styles.langToggle} onPress={toggleLang}>
+        <Text style={styles.langToggleText}>
+          {lang === 'en' ? '中文' : 'EN'}
+        </Text>
+      </TouchableOpacity>
 
-      <Text style={styles.label}>Amount</Text>
+      <Text style={styles.title}>{t.title}</Text>
+
+      <Text style={styles.label}>{t.amount}</Text>
       <TextInput
         style={styles.input}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
-        placeholder="Enter amount"
+        placeholder={t.enterAmount}
         placeholderTextColor="#999"
         selectTextOnFocus
       />
 
-      <Text style={styles.label}>From</Text>
+      <Text style={styles.label}>{t.from}</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('from')}
       >
         <Text style={styles.pickerBtnText}>
-          {POPULAR_CURRENCIES.find((c) => c.code === fromCurrency)?.flag}{' '}
-          {POPULAR_CURRENCIES.find((c) => c.code === fromCurrency)?.label ||
-            fromCurrency}
+          {CURRENCIES.find((c) => c.code === fromCurrency)?.flag}{' '}
+          {currencyLabel(fromCurrency)}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.swapBtn} onPress={swapCurrencies}>
-        <Text style={styles.swapBtnText}>Swap Currencies</Text>
+        <Text style={styles.swapBtnText}>{t.swap}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>To</Text>
+      <Text style={styles.label}>{t.to}</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('to')}
       >
         <Text style={styles.pickerBtnText}>
-          {POPULAR_CURRENCIES.find((c) => c.code === toCurrency)?.flag}{' '}
-          {POPULAR_CURRENCIES.find((c) => c.code === toCurrency)?.label ||
-            toCurrency}
+          {CURRENCIES.find((c) => c.code === toCurrency)?.flag}{' '}
+          {currencyLabel(toCurrency)}
         </Text>
       </TouchableOpacity>
 
@@ -166,7 +178,7 @@ export default function ConverterScreen() {
 
       {result !== null && !loading && (
         <View style={styles.resultBox}>
-          <Text style={styles.resultLabel}>Result</Text>
+          <Text style={styles.resultLabel}>{t.result}</Text>
           <Text style={styles.resultAmount}>
             {parseFloat(amount).toLocaleString()} {fromCurrency}
           </Text>
@@ -181,7 +193,7 @@ export default function ConverterScreen() {
           )}
           {refreshedAt && (
             <Text style={styles.updateInfo}>
-              Last updated: {formatTime(refreshedAt)}
+              {t.lastUpdated}: {formatTime(refreshedAt)}
             </Text>
           )}
         </View>
@@ -189,7 +201,7 @@ export default function ConverterScreen() {
 
       <CurrencyPicker
         visible={pickerTarget !== null}
-        currencies={POPULAR_CURRENCIES}
+        currencies={CURRENCIES}
         selected={pickerTarget === 'from' ? fromCurrency : toCurrency}
         onSelect={(code) => {
           if (pickerTarget === 'from') {
@@ -214,6 +226,21 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 50,
     paddingBottom: 40,
+  },
+  langToggle: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#EEF3FA',
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  langToggleText: {
+    color: '#4A90D9',
+    fontSize: 13,
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,

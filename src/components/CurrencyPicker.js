@@ -7,6 +7,8 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
+import translations from '../i18n/translations';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function CurrencyPicker({
   visible,
@@ -15,11 +17,15 @@ export default function CurrencyPicker({
   onSelect,
   onClose,
 }) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  const label = (code) => t.currencies[code] || code;
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Select Currency</Text>
+          <Text style={styles.title}>{t.selectCurrency}</Text>
           <FlatList
             data={currencies}
             keyExtractor={(item) => item.code}
@@ -37,13 +43,13 @@ export default function CurrencyPicker({
                     selected === item.code && styles.itemTextSelected,
                   ]}
                 >
-                  {item.flag}  {item.label}
+                  {item.flag}  {label(item.code)}
                 </Text>
               </TouchableOpacity>
             )}
           />
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>Close</Text>
+            <Text style={styles.closeBtnText}>{t.close}</Text>
           </TouchableOpacity>
         </View>
       </View>
