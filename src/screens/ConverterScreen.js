@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,18 @@ import {
   fetchLatestRates,
   convertCurrency,
   POPULAR_CURRENCIES,
+  refreshRates,
+  startAutoRefresh,
+  stopAutoRefresh,
 } from '../services/api';
 import CurrencyPicker from '../components/CurrencyPicker';
+
+function formatTime(date) {
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
 
 export default function ConverterScreen() {
   const [amount, setAmount] = useState('1');
@@ -25,8 +35,8 @@ export default function ConverterScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [pickerTarget, setPickerTarget] = useState(null); // 'from' | 'to'
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [pickerTarget, setPickerTarget] = useState(null);
+  const [refreshedAt, setRefreshedAt] = useState(null);
 
   const loadRates = useCallback(async (showFullLoading = false) => {
     try {
@@ -34,7 +44,7 @@ export default function ConverterScreen() {
       setError('');
       const data = await fetchLatestRates(fromCurrency);
       setRates(data.rates || {});
-      setLastUpdated(new Date(data.date));
+      setRefreshedAt(new Date());
     } catch {
       setError('网络错误，请检查网络后下拉刷新');
     } finally {
@@ -59,18 +69,27 @@ export default function ConverterScreen() {
     }
   }, [amount, fromCurrency, toCurrency]);
 
-  // 初始加载 + 来源货币变化时重新获取汇率
   useEffect(() => {
     loadRates(true);
   }, [loadRates]);
 
-  // 金额或目标货币变化时重新计算
   useEffect(() => {
     doConvert();
   }, [doConvert]);
 
-  const onRefresh = () => {
+  const onRefreshRef = useRef(() => loadRates(false));
+  onRefreshRef.current = () => loadRates(false);
+
+  useEffect(() => {
+    startAutoRefresh(30000, () => onRefreshRef.current());
+    return () => stopAutoRefresh();
+  }, []);
+
+  const onRefresh = async () => {
     setRefreshing(true);
+    try {
+      await refreshRates();
+    } catch {}
     loadRates(false);
   };
 
@@ -89,15 +108,13 @@ export default function ConverterScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#00d2ff"
-          colors={['#00d2ff']}
+          tintColor="#4A90D9"
+          colors={['#4A90D9']}
         />
       }
     >
-      {/* 标题 */}
       <Text style={styles.title}>实时汇率转换</Text>
 
-      {/* 输入金额 */}
       <Text style={styles.label}>金额</Text>
       <TextInput
         style={styles.input}
@@ -105,52 +122,48 @@ export default function ConverterScreen() {
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="输入金额"
-        placeholderTextColor="#555"
+        placeholderTextColor="#999"
         selectTextOnFocus
       />
 
-      {/* 来源货币 */}
       <Text style={styles.label}>从</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('from')}
       >
         <Text style={styles.pickerBtnText}>
+          {POPULAR_CURRENCIES.find((c) => c.code === fromCurrency)?.flag}{' '}
           {POPULAR_CURRENCIES.find((c) => c.code === fromCurrency)?.label ||
             fromCurrency}
         </Text>
       </TouchableOpacity>
 
-      {/* 交换按钮 */}
       <TouchableOpacity style={styles.swapBtn} onPress={swapCurrencies}>
         <Text style={styles.swapBtnText}>↑↓ 交换货币</Text>
       </TouchableOpacity>
 
-      {/* 目标货币 */}
       <Text style={styles.label}>到</Text>
       <TouchableOpacity
         style={styles.pickerBtn}
         onPress={() => setPickerTarget('to')}
       >
         <Text style={styles.pickerBtnText}>
+          {POPULAR_CURRENCIES.find((c) => c.code === toCurrency)?.flag}{' '}
           {POPULAR_CURRENCIES.find((c) => c.code === toCurrency)?.label ||
             toCurrency}
         </Text>
       </TouchableOpacity>
 
-      {/* 加载状态 */}
       {loading && (
         <ActivityIndicator
           size="large"
-          color="#00d2ff"
+          color="#4A90D9"
           style={{ marginTop: 20 }}
         />
       )}
 
-      {/* 错误提示 */}
       {error !== '' && <Text style={styles.error}>{error}</Text>}
 
-      {/* 转换结果 */}
       {result !== null && !loading && (
         <View style={styles.resultBox}>
           <Text style={styles.resultLabel}>转换结果</Text>
@@ -166,34 +179,14 @@ export default function ConverterScreen() {
               1 {fromCurrency} = {rateValue.toFixed(4)} {toCurrency}
             </Text>
           )}
-          {lastUpdated && (
+          {refreshedAt && (
             <Text style={styles.updateInfo}>
-              汇率日期: {lastUpdated.toLocaleDateString('zh-CN')}
+              上次刷新: {formatTime(refreshedAt)}
             </Text>
           )}
         </View>
       )}
 
-      {/* 快速查看常用汇率 */}
-      {Object.keys(rates).length > 0 && !loading && (
-        <View style={styles.quickRates}>
-          <Text style={styles.quickRatesTitle}>
-            1 {fromCurrency} 等于:
-          </Text>
-          {POPULAR_CURRENCIES.filter(
-            (c) => c.code !== fromCurrency
-          ).slice(0, 8).map((c) => (
-            <View key={c.code} style={styles.rateRow}>
-              <Text style={styles.rateCode}>{c.code}</Text>
-              <Text style={styles.rateValue}>
-                {rates[c.code]?.toFixed(4) || '-'}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* 货币选择弹窗 */}
       <CurrencyPicker
         visible={pickerTarget !== null}
         currencies={POPULAR_CURRENCIES}
@@ -215,7 +208,7 @@ export default function ConverterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#FFFFFF',
   },
   content: {
     padding: 20,
@@ -225,36 +218,36 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#00d2ff',
+    color: '#4A90D9',
     textAlign: 'center',
     marginBottom: 30,
   },
   label: {
-    color: '#8888aa',
+    color: '#666',
     fontSize: 14,
     marginBottom: 6,
     marginTop: 14,
   },
   input: {
-    backgroundColor: '#1a1a2e',
-    color: '#fff',
+    backgroundColor: '#F5F5F5',
+    color: '#333',
     fontSize: 24,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#2a2a4a',
+    borderColor: '#E0E0E0',
   },
   pickerBtn: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#F5F5F5',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#2a2a4a',
+    borderColor: '#E0E0E0',
   },
   pickerBtnText: {
-    color: '#fff',
+    color: '#333',
     fontSize: 18,
   },
   swapBtn: {
@@ -262,87 +255,57 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#16213e',
+    backgroundColor: '#4A90D9',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#00d2ff',
   },
   swapBtnText: {
-    color: '#00d2ff',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
   error: {
-    color: '#e94560',
+    color: '#E74C3C',
     textAlign: 'center',
     marginTop: 20,
     fontSize: 14,
   },
   resultBox: {
     marginTop: 24,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#F5F5F5',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#00d2ff33',
+    borderColor: '#E0E0E0',
   },
   resultLabel: {
-    color: '#8888aa',
+    color: '#999',
     fontSize: 13,
     marginBottom: 8,
   },
   resultAmount: {
-    color: '#a0a0b8',
+    color: '#666',
     fontSize: 18,
   },
   equals: {
-    color: '#00d2ff',
+    color: '#4A90D9',
     fontSize: 24,
     marginVertical: 6,
   },
   resultConverted: {
-    color: '#fff',
+    color: '#333',
     fontSize: 32,
     fontWeight: '700',
   },
   rateInfo: {
-    color: '#666688',
+    color: '#999',
     fontSize: 13,
     marginTop: 10,
   },
   updateInfo: {
-    color: '#555570',
-    fontSize: 11,
-    marginTop: 4,
-  },
-  quickRates: {
-    marginTop: 24,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#2a2a4a',
-  },
-  quickRatesTitle: {
-    color: '#8888aa',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  rateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#2a2a4a',
-  },
-  rateCode: {
-    color: '#c0c0d0',
-    fontSize: 15,
+    color: '#4A90D9',
+    fontSize: 12,
+    marginTop: 8,
     fontWeight: '500',
-  },
-  rateValue: {
-    color: '#00d2ff',
-    fontSize: 15,
   },
 });

@@ -37,7 +37,7 @@ export default function CurrencyPicker({
                     selected === item.code && styles.itemTextSelected,
                   ]}
                 >
-                  {item.label}
+                  {item.flag}  {item.label}
                 </Text>
               </TouchableOpacity>
             )}
@@ -54,51 +54,51 @@ export default function CurrencyPicker({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
     paddingBottom: 30,
   },
   title: {
-    color: '#e0e0e0',
+    color: '#333',
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a4a',
+    borderBottomColor: '#E0E0E0',
   },
   item: {
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2a2a4a',
+    borderBottomColor: '#E0E0E0',
   },
   itemSelected: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#EEF3FA',
   },
   itemText: {
-    color: '#a0a0b8',
+    color: '#666',
     fontSize: 16,
   },
   itemTextSelected: {
-    color: '#00d2ff',
+    color: '#4A90D9',
     fontWeight: '600',
   },
   closeBtn: {
     marginTop: 12,
     marginHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#e94560',
+    backgroundColor: '#4A90D9',
     borderRadius: 10,
   },
   closeBtnText: {
-    color: '#fff',
+    color: '#FFFFFF',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',

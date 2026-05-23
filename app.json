@@ -20,18 +20,8 @@
       },
       "allowBackup": true,
       "permissions": [
-        "INTERNET",
         "INTERNET"
       ]
-    },
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id"
-      }
-    },
-    "plugins": [
-      "expo-asset",
-      "expo-font"
-    ]
+    }
   }
 }

@@ -1,8 +1,9 @@
 import React from 'react';
+import { AppRegistry } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import ConverterScreen from './src/screens/ConverterScreen';
 
-export default function App() {
+function App() {
   return (
     <>
       <StatusBar style="light" />
@@ -10,3 +11,7 @@ export default function App() {
     </>
   );
 }
+
+AppRegistry.registerComponent('main', () => App);
+
+export default App;

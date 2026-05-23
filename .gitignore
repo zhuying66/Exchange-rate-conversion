@@ -9,3 +9,7 @@ dist/
 *.orig.*
 web-build/
 .env
+*.keystore
+.gradle/
+.idea/
+.kotlin/
