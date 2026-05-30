@@ -20,57 +20,31 @@ const OFFLINE_RATES = {
   MXN: 2.35,
 };
 
-// European Central Bank daily exchange rate XML (free, no API key required)
-// Provides EUR-based rates for 40+ currencies
-const ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
+// Frankfurter API — free, no key, ECB-sourced, JSON
+const API_BASE = 'https://api.frankfurter.app';
 
 let cachedRates = null;
 let cacheDate = null;
 
-// Fetch rates from ECB XML, fall back to offline data on failure
 async function getRates() {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch(ECB_URL, {
-      headers: { 'Accept': 'application/xml' },
+    const response = await fetch(`${API_BASE}/latest?from=CNY`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (!response.ok) throw new Error('ECB request failed');
-    const xml = await response.text();
+    if (!response.ok) throw new Error('API request failed');
+    const data = await response.json();
 
-    // Parse XML: extract all <Cube currency="XXX" rate="X.XXX"/>
-    const rateMap = {};
-    const currencyRe = /currency="(\w+)"/g;
-    const rateRe = /rate="([\d.]+)"/g;
-
-    const currencies = [];
-    const rates = [];
-    let m;
-    while ((m = currencyRe.exec(xml)) !== null) currencies.push(m[1]);
-    while ((m = rateRe.exec(xml)) !== null) rates.push(parseFloat(m[1]));
-
-    for (let i = 0; i < currencies.length; i++) {
-      rateMap[currencies[i]] = rates[i];
+    if (!data.rates || !data.date) {
+      throw new Error('API response missing rates or date');
     }
 
-    const dateMatch = xml.match(/time="([\d-]+)"/);
-    const date = dateMatch ? dateMatch[1] : new Date().toISOString().slice(0, 10);
-
-    if (!rateMap.EUR || !rateMap.CNY) {
-      throw new Error('ECB data missing EUR or CNY');
-    }
-
-    const cnyRate = rateMap.CNY;
-    const cnyBased = {};
-    for (const [code, eurVal] of Object.entries(rateMap)) {
-      cnyBased[code] = eurVal / cnyRate;
-    }
-
+    const cnyBased = { CNY: 1, ...data.rates };
     cachedRates = cnyBased;
-    cacheDate = date;
-    return { rates: cnyBased, date, source: 'live' };
+    cacheDate = data.date;
+    return { rates: cnyBased, date: data.date, source: 'live' };
   } catch {
     if (cachedRates) {
       return { rates: cachedRates, date: cacheDate, source: 'cache' };
@@ -92,10 +66,8 @@ function ensureRates() {
   return ratesPromise;
 }
 
-// Return all currency rates rebased to the specified base currency
 export async function fetchLatestRates(baseCurrency = 'CNY') {
   const { rates: allRates, date, source } = await ensureRates();
-  // Trigger background refresh without blocking the current response
   ratesPromise = getRates();
 
   const baseRate = allRates[baseCurrency];
@@ -108,10 +80,8 @@ export async function fetchLatestRates(baseCurrency = 'CNY') {
   return { rates: rebased, date, source };
 }
 
-// Convert an amount between two currencies
 export async function convertCurrency(amount, from, to) {
   const { rates: allRates } = await ensureRates();
-  // Background refresh
   ratesPromise = getRates();
 
   const fromRate = allRates[from];
@@ -123,13 +93,11 @@ export async function convertCurrency(amount, from, to) {
   return { rates: { [to]: converted } };
 }
 
-// Force refresh rates (called on pull-to-refresh)
 export async function refreshRates() {
   ratesPromise = null;
   return ensureRates();
 }
 
-// Auto-refresh timer
 let autoRefreshTimer = null;
 
 export function startAutoRefresh(intervalMs, onRefresh) {

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Currency Converter",
     "slug": "currency-converter",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.zhuying.currencyconverter",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#1a1a2e"
       },
