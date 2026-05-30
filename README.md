@@ -1,6 +1,6 @@
 # Currency Converter
 
-A real-time currency conversion Android app built with React Native (Expo SDK 52). Exchange rate data sourced from the [European Central Bank (ECB)](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml) daily feed — no API key required.
+A real-time currency conversion Android app built with React Native (Expo SDK 52). Exchange rate data from the [Frankfurter API](https://api.frankfurter.app) (ECB-sourced) — free, no API key required.
 
 ## Features
 
@@ -8,6 +8,7 @@ A real-time currency conversion Android app built with React Native (Expo SDK 52
 - Auto-refresh every 30 seconds
 - Pull-to-refresh for manual updates
 - Offline fallback rates when network is unavailable
+- In-app language toggle (English / Chinese)
 - Clean light-themed UI with currency flags
 - Android only (arm64-v8a)
 
@@ -16,7 +17,7 @@ A real-time currency conversion Android app built with React Native (Expo SDK 52
 - React Native 0.76.6 (Expo Bare Workflow)
 - Hermes JS Engine
 - New Architecture (Fabric / Bridgeless)
-- ECB XML daily exchange rates (free, no registration)
+- Frankfurter API for exchange rates (free, no registration)
 
 ## Build
 
@@ -37,8 +38,11 @@ APK output: `android/app/build/outputs/apk/release/app-release.apk`
 │   │   └── ConverterScreen.js   # Main screen
 │   ├── components/
 │   │   └── CurrencyPicker.js    # Currency picker modal
+│   ├── i18n/
+│   │   ├── translations.js      # English / Chinese strings
+│   │   └── LanguageContext.js    # Language state provider
 │   └── services/
-│       └── api.js               # Exchange rate service
+│       └── api.js               # Frankfurter API + offline fallback
 ├── android/            # Android native project
 └── app.json            # Expo configuration
 ```
