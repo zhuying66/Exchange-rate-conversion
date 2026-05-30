@@ -125,6 +125,7 @@ export default function ConverterScreen() {
       }
     >
       <View style={styles.headerRow}>
+        <View style={styles.headerSpacer} />
         <Text style={styles.title}>{t.title}</Text>
         <TouchableOpacity style={styles.langToggle} onPress={toggleLang}>
           <Text style={styles.langToggleText}>
@@ -242,13 +243,13 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 30,
     marginTop: 16,
   },
+  headerSpacer: {
+    width: 56,
+  },
   langToggle: {
-    position: 'absolute',
-    right: 0,
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: '#EEF3FA',
@@ -260,6 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
+    flex: 1,
     fontSize: 28,
     fontWeight: '700',
     color: '#4A90D9',
