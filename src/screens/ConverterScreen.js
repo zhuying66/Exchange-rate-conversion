@@ -124,14 +124,14 @@ export default function ConverterScreen() {
         />
       }
     >
-      {/* Language toggle */}
-      <TouchableOpacity style={styles.langToggle} onPress={toggleLang}>
-        <Text style={styles.langToggleText}>
-          {lang === 'en' ? '中文' : 'EN'}
-        </Text>
-      </TouchableOpacity>
-
-      <Text style={styles.title}>{t.title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{t.title}</Text>
+        <TouchableOpacity style={styles.langToggle} onPress={toggleLang}>
+          <Text style={styles.langToggleText}>
+            {lang === 'en' ? '中文' : 'EN'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.label}>{t.amount}</Text>
       <TextInput
@@ -236,18 +236,23 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 36,
     paddingBottom: 40,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+    marginTop: 16,
   },
   langToggle: {
     position: 'absolute',
-    top: 16,
-    right: 20,
+    right: 0,
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: '#EEF3FA',
     borderRadius: 12,
-    zIndex: 10,
   },
   langToggleText: {
     color: '#4A90D9',
@@ -259,7 +264,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4A90D9',
     textAlign: 'center',
-    marginBottom: 30,
   },
   label: {
     color: '#666',

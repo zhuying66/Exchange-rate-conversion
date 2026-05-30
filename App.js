@@ -7,7 +7,7 @@ import ConverterScreen from './src/screens/ConverterScreen';
 function App() {
   return (
     <LanguageProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" translucent={true} backgroundColor="transparent" />
       <ConverterScreen />
     </LanguageProvider>
   );
