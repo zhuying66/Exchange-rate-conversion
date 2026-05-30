@@ -10,6 +10,10 @@ const translations = {
     selectCurrency: 'Select Currency',
     close: 'Close',
     lastUpdated: 'Last updated',
+    ecbDate: 'ECB rate date',
+    live: 'Live',
+    cached: 'Cached',
+    offline: 'Offline',
     networkError: 'Network error. Pull down to retry.',
     conversionFailed: 'Conversion failed. Please retry.',
     currencies: {
@@ -44,6 +48,10 @@ const translations = {
     selectCurrency: '选择货币',
     close: '关闭',
     lastUpdated: '上次刷新',
+    ecbDate: 'ECB 数据日期',
+    live: '实时',
+    cached: '缓存',
+    offline: '离线',
     networkError: '网络错误，请检查网络后下拉刷新',
     conversionFailed: '转换失败，请重试',
     currencies: {

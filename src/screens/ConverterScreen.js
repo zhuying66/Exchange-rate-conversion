@@ -42,6 +42,8 @@ export default function ConverterScreen() {
   const [error, setError] = useState('');
   const [pickerTarget, setPickerTarget] = useState(null);
   const [refreshedAt, setRefreshedAt] = useState(null);
+  const [rateDate, setRateDate] = useState(null);
+  const [dataSource, setDataSource] = useState(null);
 
   const currencyLabel = (code) => t.currencies[code] || code;
 
@@ -52,6 +54,8 @@ export default function ConverterScreen() {
       const data = await fetchLatestRates(fromCurrency);
       setRates(data.rates || {});
       setRefreshedAt(new Date());
+      setRateDate(data.date || null);
+      setDataSource(data.source || null);
     } catch {
       setError(t.networkError);
     } finally {
@@ -192,9 +196,17 @@ export default function ConverterScreen() {
             </Text>
           )}
           {refreshedAt && (
-            <Text style={styles.updateInfo}>
-              {t.lastUpdated}: {formatTime(refreshedAt)}
-            </Text>
+            <View style={styles.sourceRow}>
+              <View style={[
+                styles.sourceDot,
+                dataSource === 'live' ? styles.sourceLive :
+                dataSource === 'cache' ? styles.sourceCache :
+                styles.sourceOffline,
+              ]} />
+              <Text style={styles.updateInfo}>
+                {t.ecbDate}: {rateDate}  |  {t.lastUpdated}: {formatTime(refreshedAt)}
+              </Text>
+            </View>
           )}
         </View>
       )}
@@ -332,7 +344,26 @@ const styles = StyleSheet.create({
   updateInfo: {
     color: '#4A90D9',
     fontSize: 12,
-    marginTop: 8,
     fontWeight: '500',
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  sourceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  sourceLive: {
+    backgroundColor: '#27AE60',
+  },
+  sourceCache: {
+    backgroundColor: '#F39C12',
+  },
+  sourceOffline: {
+    backgroundColor: '#E74C3C',
   },
 });

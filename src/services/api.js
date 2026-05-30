@@ -30,9 +30,13 @@ let cacheDate = null;
 // Fetch rates from ECB XML, fall back to offline data on failure
 async function getRates() {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const response = await fetch(ECB_URL, {
       headers: { 'Accept': 'application/xml' },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!response.ok) throw new Error('ECB request failed');
     const xml = await response.text();
 
@@ -58,9 +62,6 @@ async function getRates() {
       throw new Error('ECB data missing EUR or CNY');
     }
 
-    // ECB data uses EUR as base, convert to CNY base
-    // rateMap[currency] = N means 1 EUR = N currency
-    // 1 EUR = rateMap.CNY CNY → 1 CNY = rateMap[currency] / rateMap.CNY units
     const cnyRate = rateMap.CNY;
     const cnyBased = {};
     for (const [code, eurVal] of Object.entries(rateMap)) {
@@ -69,17 +70,16 @@ async function getRates() {
 
     cachedRates = cnyBased;
     cacheDate = date;
-    return { rates: cnyBased, date };
+    return { rates: cnyBased, date, source: 'live' };
   } catch {
-    // Network failure → use cache or offline data
     if (cachedRates) {
-      return { rates: cachedRates, date: cacheDate };
+      return { rates: cachedRates, date: cacheDate, source: 'cache' };
     }
     const rates = {};
     for (const [code, rate] of Object.entries(OFFLINE_RATES)) {
       rates[code] = rate;
     }
-    return { rates, date: '2026-05-23' };
+    return { rates, date: '2026-05-23', source: 'offline' };
   }
 }
 
@@ -94,7 +94,7 @@ function ensureRates() {
 
 // Return all currency rates rebased to the specified base currency
 export async function fetchLatestRates(baseCurrency = 'CNY') {
-  const { rates: allRates, date } = await ensureRates();
+  const { rates: allRates, date, source } = await ensureRates();
   // Trigger background refresh without blocking the current response
   ratesPromise = getRates();
 
@@ -105,7 +105,7 @@ export async function fetchLatestRates(baseCurrency = 'CNY') {
   for (const [code, rate] of Object.entries(allRates)) {
     rebased[code] = rate / baseRate;
   }
-  return { rates: rebased, date };
+  return { rates: rebased, date, source };
 }
 
 // Convert an amount between two currencies
