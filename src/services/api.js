@@ -71,6 +71,13 @@ const API_SOURCES = [
   },
 ];
 
+const REQUIRED_CURRENCIES = [
+  'CNY','USD','EUR','JPY','GBP','HKD','KRW','AUD','CAD',
+  'CHF','SGD','THB','TWD','MYR','INR','RUB','BRL','MXN',
+];
+
+// ... existing CURRENCIES export ...
+
 // --- Cache ---
 let cachedRates = null;
 let cacheDate = null;
@@ -79,6 +86,12 @@ async function getRates() {
   for (const source of API_SOURCES) {
     try {
       const data = await source.fetch();
+      // Verify all required currencies are present
+      const missing = REQUIRED_CURRENCIES.filter(c => !(c in data.rates));
+      if (missing.length > 0) {
+        console.log(`[api] ${source.name} missing:`, missing.join(', '));
+        throw new Error(`${source.name} missing currencies: ${missing.join(',')}`);
+      }
       cachedRates = data.rates;
       cacheDate = data.date;
       return { ...data, source: source.name };
