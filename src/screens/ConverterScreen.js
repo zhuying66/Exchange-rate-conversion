@@ -16,6 +16,7 @@ import {
   refreshRates,
   startAutoRefresh,
   stopAutoRefresh,
+  getSourceLabel,
 } from '../services/api';
 import translations from '../i18n/translations';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -197,13 +198,18 @@ export default function ConverterScreen() {
             </Text>
           )}
           {refreshedAt && (
-            <View style={styles.sourceRow}>
-              <View style={[
-                styles.sourceDot,
-                dataSource === 'live' ? styles.sourceLive :
-                dataSource === 'cache' ? styles.sourceCache :
-                styles.sourceOffline,
-              ]} />
+            <View>
+              <View style={styles.sourceRow}>
+                <View style={[
+                  styles.sourceDot,
+                  dataSource === 'offline' ? styles.sourceOffline :
+                  dataSource === 'cache' ? styles.sourceCache :
+                  styles.sourceLive,
+                ]} />
+                <Text style={styles.updateInfo}>
+                  {t.source}: {getSourceLabel(dataSource)}
+                </Text>
+              </View>
               <Text style={styles.updateInfo}>
                 {t.ecbDate}: {rateDate}  |  {t.lastUpdated}: {formatTime(refreshedAt)}
               </Text>

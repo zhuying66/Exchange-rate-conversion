@@ -20,42 +20,85 @@ const OFFLINE_RATES = {
   MXN: 2.35,
 };
 
-// Frankfurter API — free, no key, ECB-sourced, JSON
-const API_BASE = 'https://api.frankfurter.app';
+const TIMEOUT_MS = 8000;
 
+function fetchWithTimeout(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+// --- API sources (ordered by priority) ---
+
+const API_SOURCES = [
+  {
+    name: 'Frankfurter',
+    label: 'Frankfurter',
+    fetch: async () => {
+      const res = await fetchWithTimeout('https://api.frankfurter.app/latest?from=CNY');
+      if (!res.ok) throw new Error('Frankfurter failed');
+      const data = await res.json();
+      if (!data.rates || !data.date) throw new Error('Missing rates');
+      return { rates: { CNY: 1, ...data.rates }, date: data.date };
+    },
+  },
+  {
+    name: 'OpenER',
+    label: 'open.er-api.com',
+    fetch: async () => {
+      const res = await fetchWithTimeout('https://open.er-api.com/v6/latest/CNY');
+      if (!res.ok) throw new Error('OpenER failed');
+      const data = await res.json();
+      if (data.result !== 'success' || !data.rates) throw new Error('Missing rates');
+      // Extract date from time_last_update_utc or time_last_update_unix
+      let date = null;
+      if (data.time_last_update_unix) {
+        date = new Date(data.time_last_update_unix * 1000).toISOString().slice(0, 10);
+      }
+      return { rates: { CNY: 1, ...data.rates }, date: date || new Date().toISOString().slice(0, 10) };
+    },
+  },
+  {
+    name: 'ExRateFun',
+    label: 'exchangerate.fun',
+    fetch: async () => {
+      const res = await fetchWithTimeout('https://api.exchangerate.fun/latest?base=CNY');
+      if (!res.ok) throw new Error('ExRateFun failed');
+      const data = await res.json();
+      if (!data.rates) throw new Error('Missing rates');
+      return { rates: { CNY: 1, ...data.rates }, date: data.date || new Date().toISOString().slice(0, 10) };
+    },
+  },
+];
+
+// --- Cache ---
 let cachedRates = null;
 let cacheDate = null;
 
 async function getRates() {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch(`${API_BASE}/latest?from=CNY`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (!response.ok) throw new Error('API request failed');
-    const data = await response.json();
-
-    if (!data.rates || !data.date) {
-      throw new Error('API response missing rates or date');
+  for (const source of API_SOURCES) {
+    try {
+      const data = await source.fetch();
+      cachedRates = data.rates;
+      cacheDate = data.date;
+      return { ...data, source: source.name };
+    } catch (e) {
+      console.log(`[api] ${source.name} failed:`, e.message);
     }
-
-    const cnyBased = { CNY: 1, ...data.rates };
-    cachedRates = cnyBased;
-    cacheDate = data.date;
-    return { rates: cnyBased, date: data.date, source: 'live' };
-  } catch {
-    if (cachedRates) {
-      return { rates: cachedRates, date: cacheDate, source: 'cache' };
-    }
-    const rates = {};
-    for (const [code, rate] of Object.entries(OFFLINE_RATES)) {
-      rates[code] = rate;
-    }
-    return { rates, date: '2026-05-23', source: 'offline' };
   }
+
+  // All APIs failed — use cache or offline
+  if (cachedRates) {
+    return { rates: cachedRates, date: cacheDate, source: 'cache' };
+  }
+  const rates = {};
+  for (const [code, rate] of Object.entries(OFFLINE_RATES)) {
+    rates[code] = rate;
+  }
+  return { rates, date: '2026-05-23', source: 'offline' };
 }
+
+// --- Exported interface ---
 
 let ratesPromise = null;
 
@@ -68,6 +111,7 @@ function ensureRates() {
 
 export async function fetchLatestRates(baseCurrency = 'CNY') {
   const { rates: allRates, date, source } = await ensureRates();
+  // Background refresh for next call
   ratesPromise = getRates();
 
   const baseRate = allRates[baseCurrency];
@@ -98,6 +142,8 @@ export async function refreshRates() {
   return ensureRates();
 }
 
+// --- Auto-refresh ---
+
 let autoRefreshTimer = null;
 
 export function startAutoRefresh(intervalMs, onRefresh) {
@@ -116,6 +162,21 @@ export function stopAutoRefresh() {
     autoRefreshTimer = null;
   }
 }
+
+// --- Source label helper ---
+
+export function getSourceLabel(source) {
+  const map = {
+    Frankfurter: 'Frankfurter',
+    OpenER: 'open.er-api.com',
+    ExRateFun: 'exchangerate.fun',
+    cache: 'cache',
+    offline: 'offline',
+  };
+  return map[source] || source;
+}
+
+// --- Currencies ---
 
 export const CURRENCIES = [
   { code: 'CNY', flag: '🇨🇳' },
